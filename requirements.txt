@@ -1,0 +1,6 @@
+# TODO concrete versions
+aiogram
+pydantic
+aiocouch
+httpx
+pyyaml
