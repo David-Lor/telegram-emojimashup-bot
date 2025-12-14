@@ -4,3 +4,4 @@ pydantic
 aiocouch
 httpx
 pyyaml
+emoji
