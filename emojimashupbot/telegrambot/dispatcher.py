@@ -3,7 +3,7 @@ import emoji
 from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, ReactionTypeEmoji, InputSticker
 from ..settings import MainSettings
-from ..controllers import mashup_emojis, save_emoji_result
+from ..controllers import parse_emojis, mashup_emojis, save_emoji_result
 
 dispatcher = aiogram.Dispatcher()
 
@@ -23,13 +23,53 @@ async def handle_newset(message: aiogram.types.Message):
     )
 
 
+@dispatcher.message(Command("parse"))
+async def handle_parse(message: aiogram.types.Message):
+    import emoji
+    await message.answer(f"len={len(message.text)}\n"
+                         f"emoji.demojize={emoji.demojize(message.text)}\n"
+                         f"parse_emojis={[e.emoji for e in parse_emojis(message.text)]}\n"
+                         f"emoji.analyze={list(emoji.analyze(message.text))}\n")
+
+
+@dispatcher.inline_query()
+async def handle_inline_query(inline_query: aiogram.types.InlineQuery):
+    print(f"Rx inline query: {inline_query.query}")
+    if not (emojis := parse_emojis(inline_query.query)):
+        return
+
+    if result := await mashup_emojis(emojis):
+        # TODO Esto manda la foto tal cual, debe ir como sticker
+        # await inline_query.answer(
+        #     results=[aiogram.types.InlineQueryResultPhoto(
+        #         id=inline_query.query,
+        #         photo_url=result.result_url,
+        #         thumbnail_url=result.result_url,
+        #     )],
+        # )
+
+        # TODO Esto no sirve:
+        sticker = await inline_query.bot.upload_sticker_file(
+            user_id=inline_query.from_user.id,
+            sticker=BufferedInputFile(result.result_data, result.filename),
+            sticker_format="static",
+        )
+        await inline_query.answer(
+            results=[aiogram.types.InlineQueryResultCachedSticker(
+                id=inline_query.query,
+                type="sticker",
+                sticker_file_id=sticker.file_id,
+            )],
+        )
+
+
 @dispatcher.message()
 async def handle_message(message: aiogram.types.Message):
     text = message.text
     print(f"Rx message: {text}")
 
-    emojis = [char for char in text if emoji.is_emoji(char)]
-    print(f"Identified emojis: {emojis}")
+    if not (emojis := parse_emojis(text)):
+        return
 
     if result := await mashup_emojis(emojis):
         if result.telegram_sticker_file_id:

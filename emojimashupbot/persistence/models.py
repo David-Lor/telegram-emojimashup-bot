@@ -1,6 +1,6 @@
 import datetime
 from typing import ClassVar
-from ..models import Emoji, EmojiChar, EmojiUnicode
+from ..models import Emoji
 
 import pydantic
 
@@ -11,17 +11,11 @@ class Metadata(pydantic.BaseModel):
 
 
 class EmojiCache(pydantic.BaseModel):
-    METADATA_VERSION: ClassVar = 1.0
+    METADATA_VERSION: ClassVar = 0.1
 
     id: str
     metadata: Metadata
     exist: bool
-    emojis: dict[EmojiChar, EmojiUnicode] | None
+    emojis: list[Emoji] | None
     urls: list[str] | None = None
     telegram_sticker_file_id: str | None = None
-
-    def emojis_map_to_array(self) -> list[Emoji]:
-        return [
-            Emoji(emoji=emoji, unicode=unicode)
-            for emoji, unicode in self.emojis.items()
-        ]

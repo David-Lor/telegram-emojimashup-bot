@@ -3,34 +3,32 @@ from ..models import EmojiMashupResultComplete, EmojiMashupResultBasic
 from ..utils import get_now
 
 
-def mashup_result_to_cache(result: EmojiMashupResultComplete) -> EmojiCache:
-    return EmojiCache(
-        id=result.emojis_hash,
-        emojis=result.emojis_map,
-        exist=True,
-        urls=[result.result_url],
-        telegram_sticker_file_id=result.telegram_sticker_file_id,
-        metadata=Metadata(
-            saved_on=get_now(),
-            version=EmojiCache.METADATA_VERSION,
-        ),
+def format_cache_id(mashup_id, metadata_version=EmojiCache.METADATA_VERSION) -> str:
+    return f"{metadata_version}:{mashup_id}"
+
+
+def mashup_result_to_cache(result: EmojiMashupResultComplete | None, mashup_id: str | None = None) -> EmojiCache:
+    metadata = Metadata(
+        saved_on=get_now(),
+        version=EmojiCache.METADATA_VERSION,
+    )
+    cache_id = format_cache_id(
+        metadata_version=metadata.version,
+        mashup_id=mashup_id or result.emojis_hash,
     )
 
-
-def mashup_not_found_to_cache(mashup_id: str) -> EmojiCache:
     return EmojiCache(
-        id=mashup_id,
-        exist=False,
-        emojis=None,
-        metadata=Metadata(
-            saved_on=get_now(),
-            version=EmojiCache.METADATA_VERSION,
-        ),
+        id=cache_id,
+        exist=bool(result),
+        emojis=result.emojis if result else None,
+        urls=[result.result_url] if result else None,
+        telegram_sticker_file_id=result.telegram_sticker_file_id if result else None,
+        metadata=metadata,
     )
 
 
 def cache_to_mashup_result(cache: EmojiCache) -> EmojiMashupResultBasic:
     return EmojiMashupResultBasic(
-        emojis=cache.emojis_map_to_array(),
+        emojis=[],
         telegram_sticker_file_id=cache.telegram_sticker_file_id,
     )

@@ -17,13 +17,18 @@ class GoogleMashup(MashupInterface, Singleton):
 
         emoji1, emoji2 = emojis
         emojis_combinations = [(emoji1, emoji2), (emoji2, emoji1)]
-        revisions =list(self.settings.revisions)
-        random.shuffle(revisions)
+        
+        urls = list()
+        for emoji1, emoji2 in emojis_combinations:
+            for revision in self.settings.revisions:
+                unicode1 = "-".join(emoji1.unicodes)
+                unicode2 = "-".join(emoji2.unicodes)
+                url = f"https://www.gstatic.com/android/keyboard/emojikitchen/{revision}/{unicode1}/{unicode1}_{unicode2}.png"
+                urls.append(url)
 
         async with httpx.AsyncClient() as client:
-            for emoji1, emoji2 in emojis_combinations:
-                for revision in revisions:
-                    url = f"https://www.gstatic.com/android/keyboard/emojikitchen/{revision}/{emoji1.unicode}/{emoji1.unicode}_{emoji2.unicode}.png"
+            random.shuffle(urls)
+            for url in urls:
                     response = await client.get(url)
                     print(url, response.status_code)
                     if response.status_code == 200:

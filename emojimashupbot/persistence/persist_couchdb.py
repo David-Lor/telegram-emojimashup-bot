@@ -1,7 +1,7 @@
 import aiocouch
 from .persist_interface import PersistInterface
 from .models import EmojiCache
-from .mappers import mashup_result_to_cache, mashup_not_found_to_cache, cache_to_mashup_result
+from .mappers import mashup_result_to_cache, cache_to_mashup_result, format_cache_id
 from ..models import EmojiMashupResultComplete, EmojiMashupResultBasic
 from ..settings import PersistenceSettings
 from ..utils import Singleton
@@ -34,25 +34,24 @@ class CouchDBPersist(PersistInterface, Singleton):
 
     async def save_emoji_result_cache(self, result: EmojiMashupResultComplete):
         result_save = mashup_result_to_cache(result)
-        print("Save:", result_save.model_dump_json())
-        doc = await self.db.create(
-            id=result_save.id,
-            data=result_save.model_dump(mode="json", exclude={"id"}),
-        )
-        await doc.save()
+        await self._save_emoji_result_cache(result_save)
 
     async def save_emoji_result_cache_not_found(self, mashup_id: str):
-        result_save = mashup_not_found_to_cache(mashup_id)
-        print("Save:", result_save.model_dump_json())
+        result_save = mashup_result_to_cache(result=None, mashup_id=mashup_id)
+        await self._save_emoji_result_cache(result_save)
+
+    async def _save_emoji_result_cache(self, result_save: EmojiCache):
+        data = result_save.model_dump(mode="json", exclude={"id"}, exclude_none=True)
+        print("Save:", data)
         doc = await self.db.create(
             id=result_save.id,
-            data=result_save.model_dump(mode="json", exclude={"id"}),
+            data=data,
         )
         await doc.save()
 
     async def get_emoji_result_cache(self, mashup_id: str) -> EmojiMashupResultBasic | None:
         try:
-            doc = await self.db.get(mashup_id)
+            doc = await self.db.get(format_cache_id(mashup_id))
             parsed_doc = EmojiCache(id=doc.id, **doc.data)
             return cache_to_mashup_result(parsed_doc)
         except aiocouch.exception.NotFoundError:
