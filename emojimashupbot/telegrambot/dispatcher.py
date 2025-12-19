@@ -71,19 +71,26 @@ async def handle_message(message: aiogram.types.Message):
     if not (emojis := parse_emojis(text)):
         return
 
-    if result := await mashup_emojis(emojis):
-        if result.telegram_sticker_file_id:
-            sticker_file = result.telegram_sticker_file_id
-        else:
-            sticker_file = BufferedInputFile(result.result_data, result.filename)
-
-        sticker = await message.answer_sticker(
-            reply_to_message_id=message.message_id,
-            sticker=sticker_file,
+    result = await mashup_emojis(bot_id=message.bot.id, emojis=emojis)
+    if result.result_telegram:
+        sticker_file = result.result_telegram.sticker_file_id
+    elif result.result_google and result.result_google.data:
+        sticker_file = BufferedInputFile(
+            file=result.result_google.data,
+            filename=result.filename,
         )
-
-        print("Sticker id:", sticker.sticker.file_id)
-        await save_emoji_result(result, sticker.sticker.file_id)
-
     else:
         await message.react([ReactionTypeEmoji(emoji="👎")])
+        return
+
+    sticker = await message.answer_sticker(
+        reply_to_message_id=message.message_id,
+        sticker=sticker_file,
+    )
+
+    print("Sticker id:", sticker.sticker.file_id)
+    await save_emoji_result(
+        bot_id=message.bot.id,
+        result=result,
+        telegram_sticker_file_id=sticker.sticker.file_id,
+    )

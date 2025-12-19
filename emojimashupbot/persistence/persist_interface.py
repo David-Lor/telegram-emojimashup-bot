@@ -1,5 +1,5 @@
 import abc
-from ..models import EmojiMashupResultComplete, EmojiMashupResultBasic
+from ..models import EmojiMashupResult
 
 
 class PersistInterface(abc.ABC):
@@ -11,13 +11,9 @@ class PersistInterface(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def save_emoji_result_cache(self, result: EmojiMashupResultComplete):
+    async def save_emoji_result_cache(self, result: EmojiMashupResult):
         pass
 
     @abc.abstractmethod
-    async def save_emoji_result_cache_not_found(self, mashup_id: str):
-        pass
-
-    @abc.abstractmethod
-    async def get_emoji_result_cache(self, mashup_id: str) -> EmojiMashupResultBasic | None:
+    async def get_emoji_result_cache(self, mashup_id: str) -> EmojiMashupResult | None:
         pass

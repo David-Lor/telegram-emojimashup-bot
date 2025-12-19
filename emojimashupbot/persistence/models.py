@@ -1,21 +1,18 @@
 import datetime
 from typing import ClassVar
-from ..models import Emoji
 
 import pydantic
 
 
 class Metadata(pydantic.BaseModel):
-    saved_on: datetime.datetime
+    METADATA_VERSION: ClassVar = 0.2
+
     version: float
+    saved_on: datetime.datetime
 
-
-class EmojiCache(pydantic.BaseModel):
-    METADATA_VERSION: ClassVar = 0.1
-
-    id: str
-    metadata: Metadata
-    exist: bool
-    emojis: list[Emoji] | None
-    urls: list[str] | None = None
-    telegram_sticker_file_id: str | None = None
+    @classmethod
+    def new(cls):
+        return cls(
+            version=cls.METADATA_VERSION,
+            saved_on=datetime.datetime.now(),
+        )

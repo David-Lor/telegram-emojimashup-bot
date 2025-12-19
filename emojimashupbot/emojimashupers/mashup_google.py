@@ -1,7 +1,7 @@
 import random
 import httpx
 from .mashup_interface import MashupInterface
-from ..models import Emoji, EmojiMashupResultComplete
+from ..models import Emoji, EmojiMashupResult, EmojiMashupResultURL
 from ..settings import MashupersSettings
 from ..utils import Singleton, AsyncPool
 
@@ -11,7 +11,7 @@ class GoogleMashup(MashupInterface, Singleton):
     def __init__(self, settings: MashupersSettings.Google):
         self.settings = settings
 
-    async def mashup(self, emojis: list[Emoji]) -> EmojiMashupResultComplete | None:
+    async def mashup(self, emojis: list[Emoji]) -> EmojiMashupResult:
         if len(emojis) != 2:
             raise ValueError("Google mashup supports only 2 emojis")
 
@@ -36,13 +36,17 @@ class GoogleMashup(MashupInterface, Singleton):
 
         if responses := [r for r in runner.results if r]:
             response = responses[0]
-            return EmojiMashupResultComplete(
+            return EmojiMashupResult(
                 emojis=[emoji1, emoji2],
-                result_url=str(response.url),
-                result_data=response.content,
+                exists=True,
+                result_google=EmojiMashupResultURL(
+                    url=str(response.url),
+                    data=response.content,
+                    extension=".png",
+                ),
             )
 
-        return None
+        return EmojiMashupResult(emojis=emojis, exists=False)
 
     @staticmethod
     async def _request_mashup(client: httpx.AsyncClient, url: str, pool: AsyncPool) -> httpx.Response | None:

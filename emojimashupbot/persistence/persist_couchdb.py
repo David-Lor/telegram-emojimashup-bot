@@ -1,10 +1,9 @@
 import aiocouch
 from .persist_interface import PersistInterface
-from .models import EmojiCache
-from .mappers import mashup_result_to_cache, cache_to_mashup_result, format_cache_id
-from ..models import EmojiMashupResultComplete, EmojiMashupResultBasic
+from .models import Metadata
+from ..models import EmojiMashupResult
 from ..settings import PersistenceSettings
-from ..utils import Singleton
+from ..utils import Singleton, get_now
 
 
 class CouchDBPersist(PersistInterface, Singleton):
@@ -32,27 +31,47 @@ class CouchDBPersist(PersistInterface, Singleton):
             self.db = None
             self.connection = None
 
-    async def save_emoji_result_cache(self, result: EmojiMashupResultComplete):
-        result_save = mashup_result_to_cache(result)
-        await self._save_emoji_result_cache(result_save)
-
-    async def save_emoji_result_cache_not_found(self, mashup_id: str):
-        result_save = mashup_result_to_cache(result=None, mashup_id=mashup_id)
-        await self._save_emoji_result_cache(result_save)
-
-    async def _save_emoji_result_cache(self, result_save: EmojiCache):
-        data = result_save.model_dump(mode="json", exclude={"id"}, exclude_none=True)
-        print("Save:", data)
-        doc = await self.db.create(
-            id=result_save.id,
-            data=data,
-        )
-        await doc.save()
-
-    async def get_emoji_result_cache(self, mashup_id: str) -> EmojiMashupResultBasic | None:
+    async def save_emoji_result_cache(self, result: EmojiMashupResult):
+        doc_id, doc = self.Mappers.result_to_doc(result)
+        print("Save:", doc_id, doc)
         try:
-            doc = await self.db.get(format_cache_id(mashup_id))
-            parsed_doc = EmojiCache(id=doc.id, **doc.data)
-            return cache_to_mashup_result(parsed_doc)
+            create = await self.db.create(
+                id=doc_id,
+                data=doc,
+            )
+            await create.save()
+        except aiocouch.exception.ConflictError:
+            print("Update instead:", doc_id, doc)
+            saved = await self.db.get(doc_id)
+            saved.update(doc)
+            await saved.save()
+
+    async def get_emoji_result_cache(self, mashup_id: str) -> EmojiMashupResult | None:
+        try:
+            doc = await self.db.get(self.Mappers.format_doc_id(Metadata.METADATA_VERSION, mashup_id))
+            result = self.Mappers.doc_to_result(doc.data)
+            print("Read:", result)
+            return result
         except aiocouch.exception.NotFoundError:
             return None
+
+
+    class Mappers:
+
+        @classmethod
+        def result_to_doc(cls, result: EmojiMashupResult) -> tuple[str, dict]:
+            metadata = Metadata.new()
+            doc_id = cls.format_doc_id(metadata.version, result.mashup_id)
+            doc = dict(
+                **result.model_dump(mode="json", exclude={"id"}, exclude_none=True),
+                metadata=metadata.model_dump(mode="json"),
+            )
+            return doc_id, doc
+
+        @classmethod
+        def doc_to_result(cls, doc: dict) -> EmojiMashupResult:
+            return EmojiMashupResult(**doc)
+
+        @classmethod
+        def format_doc_id(cls, metadata_version, mashup_id) -> str:
+            return f"{metadata_version}:{mashup_id}"

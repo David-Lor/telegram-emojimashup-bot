@@ -28,7 +28,7 @@ class AsyncPool(Generic[T]):
     def __init__(self, concurrency_limit: int):
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.tasks: list[Coroutine] = list()
-        self.results: list[T] = list()
+        self.results: list[T|None] = list()
         self.stop = False
 
     def add_task(self, coro: Coroutine):
