@@ -34,6 +34,12 @@ class AsyncPool(Generic[T]):
     def add_task(self, coro: Coroutine):
         self.tasks.append(coro)
 
+    def get_first_result(self) -> T | None:
+        try:
+            return next(r for r in self.results if r)
+        except StopIteration:
+            return None
+
     async def run(self):
         self.results = [None] * len(self.tasks)
         await asyncio.gather(*[self._run_one(i, coro) for i, coro in enumerate(self.tasks)])

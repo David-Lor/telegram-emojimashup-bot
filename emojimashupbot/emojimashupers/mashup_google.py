@@ -34,8 +34,7 @@ class GoogleMashup(MashupInterface, Singleton):
                 runner.add_task(self._request_mashup(client, url, runner))
             await runner.run()
 
-        if responses := [r for r in runner.results if r]:
-            response = responses[0]
+        if response := runner.get_first_result():
             return EmojiMashupResult(
                 emojis=[emoji1, emoji2],
                 exists=True,
