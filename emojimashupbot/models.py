@@ -7,10 +7,6 @@ class Emoji(pydantic.BaseModel):
     unicodes: list[str]
     name: str
 
-    @staticmethod
-    def emoji_to_unicode(emoji: str) -> str:
-        return 'u{:X}'.format(ord(emoji)).lower()
-
 
 class EmojiMashupRequest(pydantic.BaseModel):
     emojis: list[Emoji]

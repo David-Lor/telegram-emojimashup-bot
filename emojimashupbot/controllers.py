@@ -16,7 +16,11 @@ async def mashup_emojis(bot_id, emojis: list[Emoji]) -> EmojiMashupResult:
 
     # Find online
     result = await mashuper().mashup(emojis)
-    #asyncio.create_task(repository().save_emoji_result_cache(result))
+
+    if not result.exists:
+        # Save when not exists. When does exist, will be saved after sending as sticker.
+        asyncio.create_task(repository().save_emoji_result_cache(result))
+
     return result
 
 
@@ -34,7 +38,11 @@ def parse_emojis(text: str) -> list[Emoji]:
     for emoji_analysis in emojilib.analyze(text):
         results.append(Emoji(
             value=emoji_analysis.chars,
-            unicodes=[Emoji.emoji_to_unicode(char) for char in emoji_analysis.chars],
+            unicodes=[emoji_to_unicode(char) for char in emoji_analysis.chars],
             name=emoji_analysis.value.data["en"]
         ))
     return results
+
+
+def emoji_to_unicode(emoji_char: str) -> str:
+    return 'u{:X}'.format(ord(emoji_char)).lower()

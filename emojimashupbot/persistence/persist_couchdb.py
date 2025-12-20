@@ -3,7 +3,7 @@ from .persist_interface import PersistInterface
 from .models import Metadata
 from ..models import EmojiMashupResult
 from ..settings import PersistenceSettings
-from ..utils import Singleton, get_now
+from ..utils import Singleton
 
 
 class CouchDBPersist(PersistInterface, Singleton):

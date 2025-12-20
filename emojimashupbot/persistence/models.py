@@ -1,5 +1,6 @@
 import datetime
 from typing import ClassVar
+from ..utils import get_now
 
 import pydantic
 
@@ -14,5 +15,5 @@ class Metadata(pydantic.BaseModel):
     def new(cls):
         return cls(
             version=cls.METADATA_VERSION,
-            saved_on=datetime.datetime.now(),
+            saved_on=get_now(),
         )
