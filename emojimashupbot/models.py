@@ -18,11 +18,15 @@ class EmojiMashupRequest(pydantic.BaseModel):
             hs.update(str(emoji.unicodes).encode())
         return hs.hexdigest()
 
+    @property
+    def emojis_icons_list(self):
+        return [e.value for e in self.emojis]
+
 
 class EmojiMashupResultURL(pydantic.BaseModel):
     url: str
     data: bytes | None = pydantic.Field(default=None, exclude=True)
-    extension: str = ".png"
+    extension: str
 
 
 class EmojiMashupResultTelegram(pydantic.BaseModel):

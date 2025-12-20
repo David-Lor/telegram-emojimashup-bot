@@ -5,3 +5,4 @@ aiocouch
 httpx
 pyyaml
 emoji
+pillow

@@ -32,7 +32,7 @@ class GoogleMashup(MashupInterface, Singleton):
                 result_google=EmojiMashupResultURL(
                     url=str(response.url),
                     data=response.content,
-                    extension=".png",
+                    extension="png",
                 ),
             )
 

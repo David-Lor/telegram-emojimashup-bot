@@ -27,7 +27,9 @@ class PersistenceSettings(pydantic.BaseModel):
 
 class TelegramSettings(pydantic.BaseModel):
     bot_token: pydantic.SecretStr
-    bot_name: str
+    admins_chatids: list[int]
+    sticker_size: list[int] = pydantic.Field(default=[512, 512], min_length=2, max_length=2)
+    tmp_stickerset_basename: str = "tmp"
 
 
 class MainSettings(pydantic.BaseModel, Singleton):
