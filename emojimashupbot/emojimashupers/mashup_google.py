@@ -16,16 +16,7 @@ class GoogleMashup(MashupInterface, Singleton):
             raise ValueError("Google mashup supports only 2 emojis")
 
         emoji1, emoji2 = emojis
-        emojis_combinations = [(emoji1, emoji2), (emoji2, emoji1)]
-        
-        urls = list()
-        for emoji1, emoji2 in emojis_combinations:
-            for revision in self.settings.revisions:
-                unicode1 = "-".join(emoji1.unicodes)
-                unicode2 = "-".join(emoji2.unicodes)
-                url = f"https://www.gstatic.com/android/keyboard/emojikitchen/{revision}/{unicode1}/{unicode1}_{unicode2}.png"
-                urls.append(url)
-
+        urls = self._format_urls(emoji1, emoji2)
         random.shuffle(urls)
         runner = AsyncPool[httpx.Response](concurrency_limit=5)
 
@@ -46,6 +37,20 @@ class GoogleMashup(MashupInterface, Singleton):
             )
 
         return EmojiMashupResult(emojis=emojis, exists=False)
+
+    def _format_urls(self, emoji1, emoji2):
+        urls = list()
+        emojis_combinations = [(emoji1, emoji2), (emoji2, emoji1)]
+
+        for emoji1, emoji2 in emojis_combinations:
+            for revision in self.settings.revisions:
+                unicode1 = "-".join(emoji1.unicodes)
+                unicode2 = "-".join(emoji2.unicodes)
+                url = f"https://www.gstatic.com/android/keyboard/emojikitchen/{revision}/{unicode1}/{unicode1}_{unicode2}.png"
+                urls.append(url)
+
+        random.shuffle(urls)
+        return urls
 
     @staticmethod
     async def _request_mashup(client: httpx.AsyncClient, url: str, pool: AsyncPool) -> httpx.Response | None:
