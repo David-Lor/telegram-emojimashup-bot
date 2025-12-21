@@ -1,8 +1,14 @@
+import uuid
+import base64
 import asyncio
 import datetime
 from typing import TypeVar, Type, Generic, Coroutine
 
 T = TypeVar('T')
+
+
+def get_id() -> str:
+    return base64.b64encode(uuid.uuid4().bytes).decode("utf-8").rstrip("=")
 
 
 def get_now():
