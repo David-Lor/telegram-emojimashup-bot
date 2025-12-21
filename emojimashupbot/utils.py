@@ -1,14 +1,13 @@
-import uuid
-import base64
 import asyncio
 import datetime
+import shortuuid
 from typing import TypeVar, Type, Generic, Coroutine
 
 T = TypeVar('T')
 
 
 def get_id() -> str:
-    return base64.b64encode(uuid.uuid4().bytes).decode("utf-8").rstrip("=")
+    return shortuuid.random()
 
 
 def get_now():
